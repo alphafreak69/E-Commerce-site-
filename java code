@@ -1,0 +1,173 @@
+import java.util.*;
+
+public class ECommerceApp {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        Platform platform = new Platform();
+        platform.seedSampleData();
+
+        System.out.println("E-Commerce Platform (Test Console)");
+        while (true) {
+            System.out.println("Menu: [1] List Users  [2] Show Products  [3] Add Product  [4] Place Order  [5] Show Orders  [0] Exit");
+            String choice = sc.nextLine().trim();
+            if (choice.equals("0")) break;
+
+            if (choice.equals("1")) {
+                platform.listUsers();
+            } else if (choice.equals("2")) {
+                platform.listAllProducts();
+            } else if (choice.equals("3")) {
+                System.out.print("Product Name: ");
+                String name = sc.nextLine().trim();
+                System.out.print("Description: ");
+                String desc = sc.nextLine().trim();
+                System.out.print("Price: ");
+                double price = Double.parseDouble(sc.nextLine().trim());
+                System.out.print("Quantity: ");
+                int qty = Integer.parseInt(sc.nextLine().trim());
+                System.out.print("Seller ID: ");
+                String sellerId = sc.nextLine().trim();
+                Product prod = new Product(name, desc, price, qty, sellerId);
+                platform.addProduct(prod);
+                System.out.println("Added product: " + prod);
+            } else if (choice.equals("4")) {
+                System.out.print("Buyer ID: ");
+                String buyerId = sc.nextLine().trim();
+                System.out.print("Product ID: ");
+                String productId = sc.nextLine().trim();
+                System.out.print("Quantity: ");
+                int qty = Integer.parseInt(sc.nextLine().trim());
+                Order ord = platform.createOrder(buyerId, productId, qty);
+                if (ord != null) System.out.println("Order placed: " + ord); else System.out.println("Order failed (stock?).");
+            } else if (choice.equals("5")) {
+                platform.listAllOrders();
+            } else {
+                System.out.println("Unknown choice.");
+            }
+            System.out.println("-----");
+        }
+        System.out.println("Done.");
+    }
+}
+
+class Platform {
+    Map<String, User> users = new LinkedHashMap<>();
+    Map<String, Product> products = new LinkedHashMap<>();
+    Map<String, Order> orders = new LinkedHashMap<>();
+
+    void addUser(User u) { users.put(u.id, u); }
+    boolean deleteUser(String id) { return users.remove(id) != null; }
+    User findUserById(String id) { return users.get(id); }
+    User findUserByName(String name) {
+        for (User u : users.values()) if (u.name.equals(name)) return u;
+        return null;
+    }
+    void addProduct(Product p) { products.put(p.id, p); }
+    Product findProductById(String id) { return products.get(id); }
+    void listUsers() {
+        System.out.println("--- Users ---");
+        for (User u : users.values()) System.out.println(u);
+    }
+    void listAllProducts() {
+        System.out.println("--- Products ---");
+        for (Product p : products.values()) System.out.println(p);
+    }
+    void listProductsBySeller(String sellerId) {
+        System.out.println("--- Products for seller " + sellerId + ":");
+        for (Product p : products.values())
+            if (p.sellerId.equals(sellerId)) System.out.println(p);
+    }
+    void searchProducts(String term) {
+        System.out.println("--- Search results for '" + term + "':");
+        for (Product p : products.values())
+            if (p.name.toLowerCase().contains(term.toLowerCase()) ||
+                p.description.toLowerCase().contains(term.toLowerCase()))
+                System.out.println(p);
+    }
+    Order createOrder(String buyerId, String productId, int qty) {
+        Product p = products.get(productId);
+        if (p == null || p.quantity < qty) return null;
+        p.quantity -= qty;
+        Order o = new Order(buyerId, productId, qty);
+        orders.put(o.id, o);
+        return o;
+    }
+    void listAllOrders() {
+        System.out.println("--- Orders ---");
+        for (Order o : orders.values()) System.out.println(o);
+    }
+    void listOrdersByBuyer(String buyerId) {
+        System.out.println("--- Orders for buyer " + buyerId + ":");
+        for (Order o : orders.values())
+            if (o.buyerId.equals(buyerId)) System.out.println(o);
+    }
+    void listOrdersBySeller(String sellerId) {
+        System.out.println("--- Orders for seller " + sellerId + ":");
+        for (Order o : orders.values()) {
+            Product p = products.get(o.productId);
+            if (p != null && p.sellerId.equals(sellerId))
+                System.out.println(o);
+        }
+    }
+    Order findOrderById(String id) { return orders.get(id); }
+    void seedSampleData() {
+        User admin = new User("AdminUser", "admin@site.com", "ADMIN");
+        User seller1 = new User("Alice_Shop", "alice@shop.com", "SELLER");
+        User seller2 = new User("BobStore", "bob@store.com", "SELLER");
+        User buyer1 = new User("Charlie", "charlie@me.com", "BUYER");
+        addUser(admin); addUser(seller1); addUser(seller2); addUser(buyer1);
+        addProduct(new Product("Wireless Mouse", "Comfortable wireless mouse", 299.0, 10, seller1.id));
+        addProduct(new Product("USB-C Cable", "1m braided cable", 199.0, 20, seller2.id));
+        addProduct(new Product("Notebook", "A5 ruled notebook", 49.0, 100, seller1.id));
+        orders.put("O1", new Order(buyer1.id, "P3", 2));
+    }
+}
+
+class User {
+    static int counter = 1;
+    String id, name, email, role;
+    User(String name, String email, String role) {
+        this.id = "U" + (counter++);
+        this.name = name;
+        this.email = email;
+        this.role = role;
+    }
+    public String toString() {
+        return String.format("[%s] %s <%s> (%s)", id, name, email, role);
+    }
+}
+
+class Product {
+    static int counter = 1;
+    String id, name, description;
+    double price;
+    int quantity;
+    String sellerId;
+    Product(String name, String description, double price, int quantity, String sellerId) {
+        this.id = "P" + (counter++);
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.quantity = quantity;
+        this.sellerId = sellerId;
+    }
+    public String toString() {
+        return String.format("[%s] %s - %s | ₹%.2f | qty:%d | seller:%s", id, name, description, price, quantity, sellerId);
+    }
+}
+
+class Order {
+    static int counter = 2; // avoid clash with seed order ("O1")
+    String id, buyerId, productId, status;
+    int quantity;
+    Order(String buyerId, String productId, int quantity) {
+        this.id = "O" + (counter++);
+        this.buyerId = buyerId;
+        this.productId = productId;
+        this.quantity = quantity;
+        this.status = "CREATED";
+    }
+    public String toString() {
+        return String.format("[%s] buyer:%s product:%s qty:%d status:%s", id, buyerId, productId, quantity, status);
+    }
+}
