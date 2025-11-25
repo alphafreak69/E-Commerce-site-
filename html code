@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Commerce Platform 🌐</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background: linear-gradient(135deg, #eef2ff, #fafafa);
+    font-family: 'Poppins', sans-serif;
+  }
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="bg-indigo-600 text-white py-4 shadow-lg mb-6">
+  <h1 class="text-3xl text-center font-semibold tracking-wide">🛍️ E-Commerce Management Console</h1>
+</header>
+
+<!-- Menu -->
+<div class="flex flex-wrap justify-center gap-3 mb-6">
+  <button onclick="listUsers()" class="bg-indigo-500 hover:bg-indigo-700 px-4 py-2 rounded-lg text-white">List Users</button>
+  <button onclick="listProducts()" class="bg-teal-500 hover:bg-teal-700 px-4 py-2 rounded-lg text-white">Show Products</button>
+  <button onclick="showAddProduct()" class="bg-pink-500 hover:bg-pink-700 px-4 py-2 rounded-lg text-white">Add Product</button>
+  <button onclick="showOrderForm()" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg text-white">Place Order</button>
+  <button onclick="listOrders()" class="bg-blue-500 hover:bg-blue-700 px-4 py-2 rounded-lg text-white">Show Orders</button>
+</div>
+
+<!-- Output Section -->
+<div id="output" class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6 mb-10"></div>
+
+<script>
+// --- Data Models ---
+let users = [];
+let products = [];
+let orders = [];
+let uid = 1, pid = 1, oid = 1;
+
+// --- Seed Sample Data ---
+function seedData() {
+  users = [
+    {id:"U"+uid++, name:"AdminUser", email:"admin@site.com", role:"ADMIN"},
+    {id:"U"+uid++, name:"Alice_Shop", email:"alice@shop.com", role:"SELLER"},
+    {id:"U"+uid++, name:"BobStore", email:"bob@store.com", role:"SELLER"},
+    {id:"U"+uid++, name:"Charlie", email:"charlie@me.com", role:"BUYER"}
+  ];
+  products = [
+    {id:"P"+pid++, name:"Wireless Mouse", description:"Comfortable wireless mouse", price:299, quantity:10, sellerId:"U2"},
+    {id:"P"+pid++, name:"USB-C Cable", description:"1m braided cable", price:199, quantity:20, sellerId:"U3"},
+    {id:"P"+pid++, name:"Notebook", description:"A5 ruled notebook", price:49, quantity:100, sellerId:"U2"}
+  ];
+  orders = [
+    {id:"O"+oid++, buyerId:"U4", productId:"P3", quantity:2, status:"CREATED"}
+  ];
+}
+seedData();
+
+// --- Display Helper ---
+function show(html) {
+  document.getElementById("output").innerHTML = html;
+}
+
+// --- List Users ---
+function listUsers() {
+  let html = <h2 class="text-2xl font-semibold mb-3 text-indigo-600">👥 Users</h2>;
+  users.forEach(u => {
+    html += `
+      <div class="card bg-indigo-50 rounded-lg p-3 mb-2 border border-indigo-100">
+        <strong>${u.name}</strong> <span class="text-sm text-gray-600">(${u.role})</span><br>
+        <span class="text-gray-700">${u.email}</span><br>
+        <small class="text-gray-500">ID: ${u.id}</small>
+      </div>`;
+  });
+  show(html);
+}
+
+// --- List Products ---
+function listProducts() {
+  let html = <h2 class="text-2xl font-semibold mb-3 text-teal-600">📦 Products</h2>;
+  products.forEach(p => {
+    html += `
+      <div class="card bg-teal-50 rounded-lg p-3 mb-3 border border-teal-100">
+        <div class="flex justify-between">
+          <div>
+            <strong>${p.name}</strong> <span class="text-sm text-gray-600">(${p.id})</span><br>
+            <p class="text-gray-700">${p.description}</p>
+            <p class="text-sm text-gray-600">Seller: ${p.sellerId}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-lg font-bold text-teal-700">₹${p.price}</p>
+            <p class="text-sm text-gray-600">Qty: ${p.quantity}</p>
+          </div>
+        </div>
+      </div>`;
+  });
+  show(html);
+}
+
+// --- Add Product Form ---
+function showAddProduct() {
+  show(`
+    <h2 class="text-2xl font-semibold mb-3 text-pink-600">➕ Add Product</h2>
+    <input id="pname" class="w-full border p-2 rounded mb-2" placeholder="Product Name">
+    <textarea id="pdesc" class="w-full border p-2 rounded mb-2" placeholder="Description"></textarea>
+    <input id="pprice" type="number" class="w-full border p-2 rounded mb-2" placeholder="Price">
+    <input id="pqty" type="number" class="w-full border p-2 rounded mb-2" placeholder="Quantity">
+    <input id="pseller" class="w-full border p-2 rounded mb-3" placeholder="Seller ID">
+    <button onclick="addProduct()" class="bg-pink-500 hover:bg-pink-700 text-white px-4 py-2 rounded-lg">Add Product</button>
+  `);
+}
+
+// --- Add Product Logic ---
+function addProduct() {
+  let name = document.getElementById("pname").value.trim();
+  let desc = document.getElementById("pdesc").value.trim();
+  let price = parseFloat(document.getElementById("pprice").value);
+  let qty = parseInt(document.getElementById("pqty").value);
+  let sellerId = document.getElementById("pseller").value.trim();
+  if (!name || !sellerId || isNaN(price) || isNaN(qty)) {
+    alert("⚠️ Please fill all fields properly!");
+    return;
+  }
+  let prod = { id:"P"+pid++, name, description:desc, price, quantity:qty, sellerId };
+  products.push(prod);
+  show(<div class="bg-green-100 text-green-700 p-3 rounded-lg">✅ Product Added: ${prod.name}</div>);
+}
+
+// --- Order Form ---
+function showOrderForm() {
+  show(`
+    <h2 class="text-2xl font-semibold mb-3 text-yellow-600">🛒 Place Order</h2>
+    <input id="buyer" class="w-full border p-2 rounded mb-2" placeholder="Buyer ID">
+    <input id="prod" class="w-full border p-2 rounded mb-2" placeholder="Product ID">
+    <input id="qty" type="number" class="w-full border p-2 rounded mb-3" placeholder="Quantity">
+    <button onclick="placeOrder()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg">Place Order</button>
+  `);
+}
+
+// --- Place Order Logic ---
+function placeOrder() {
+  let buyerId = document.getElementById("buyer").value.trim();
+  let productId = document.getElementById("prod").value.trim();
+  let qty = parseInt(document.getElementById("qty").value);
+
+  let p = products.find(pr => pr.id === productId);
+  if (!p || p.quantity < qty) {
+    show(<div class='bg-red-100 text-red-700 p-3 rounded-lg'>❌ Order failed — invalid product or insufficient stock!</div>);
+    return;
+  }
+  p.quantity -= qty;
+  let o = { id:"O"+oid++, buyerId, productId, quantity:qty, status:"CREATED" };
+  orders.push(o);
+  show(<div class="bg-green-100 text-green-700 p-3 rounded-lg">✅ Order Placed Successfully!<br><b>Order ID:</b> ${o.id}</div>);
+}
+
+// --- List Orders ---
+function listOrders() {
+  let html = <h2 class="text-2xl font-semibold mb-3 text-blue-600">📑 Orders</h2>;
+  orders.forEach(o => {
+    html += `
+      <div class="card bg-blue-50 rounded-lg p-3 mb-3 border border-blue-100">
+        <strong>${o.id}</strong> — Buyer: ${o.buyerId}, Product: ${o.productId}<br>
+        <span class="text-gray-600">Qty: ${o.quantity} | Status: ${o.status}</span>
+      </div>`;
+  });
+  show(html);
+}
+</script>
+
+</body>
+</html>
